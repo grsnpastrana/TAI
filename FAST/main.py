@@ -1,14 +1,16 @@
-from fastapi import FastAPI,HTTPException
+from fastapi import FastAPI,HTTPException, Depends  
 from fastapi.responses import JSONResponse
 from typing import Optional, List
-from FAST.modelsPydantic import modeloUsuario, modeloAuth
-from genToken import createToken 
+from modelsPydantic import modeloUsuario, modeloAuth
+from genToken import createToken
+from middlewares import BearerJWT
 
 app = FastAPI(
     title="Mi Primer API 192",
     description="Gerson",
     version="1.0.1"
 )
+
 
 #BD ficticia
 usuarios = [
@@ -23,22 +25,23 @@ usuarios = [
 def home():
     return {"hello": "world FastAPI"}
 
-
-#Endpoint de autenticación 
-@app.post('/auth', response_model= modeloAuth, tags=['Autentificación'])
-def login(autorizacion:modeloAuth):
-    if autorizacion.email == 'example@example.com' and autorizacion.pssw == '12345678':
-        token:str = createToken(autorizacion.model_dump())
+# Endpoint Autenticación
+@app.post('/auth', tags= ['Autentificacion'])
+def login(autirizacion:modeloAuth):
+    if autirizacion.email == 'pao@example.com' and autirizacion.passw == '123456789':
+        token:str = createToken(autirizacion.model_dump())
         print(token)
-        return JSONResponse(content=token)
+        return JSONResponse(content = token)
+    else:
+        return{"Aviso": "Usuario sin autorizacion"}
 
 #Endpoint CONSULTA TODOS
-@app.get('/todosUsuarios', response_model=List[modeloUsuario], tags=['Operaciónes CRUD'])
+@app.get('/todosUsuarios',dependencies= [Depends(BearerJWT())], response_model=List[modeloUsuario], tags=['Operaciónes CRUD'])
 def leerUsuarios():
     return usuarios
 
 #Endpoint AGREGAR NUEVOS
-@app.post('/usuario', response_model= modeloUsuario, tags=['Operaciónes CRUD'])
+@app.post('/usuario', response_model= modeloUsuario, tags=['Operaciónes CRUD'])
 def agregarUsuario(usuario:modeloUsuario):
     for usr in usuarios:
         if usr["id"] == usuario.id:
@@ -47,7 +50,7 @@ def agregarUsuario(usuario:modeloUsuario):
         return usuario
 
 #Endopoint ACTUALIZAR USUARIO
-@app.put('/usuario/{id}',response_model= modeloUsuario, tags=['Operaciónes CRUD'])
+@app.put('/usuario/{id}',response_model= modeloUsuario, tags=['Operaciónes CRUD'])
 def actualizarUsuario(id: int, usuarioActualizado: modeloUsuario):
     for index, usr in enumerate(usuarios):
         if usr["id"] == id:
@@ -56,7 +59,7 @@ def actualizarUsuario(id: int, usuarioActualizado: modeloUsuario):
         raise HTTPException(status_code=400, detail="El usuario no existre")
 
 #Endopoint ELIMINAR USUARIO
-@app.delete('/usuario/{id}', tags=['Operaciónes CRUD'])
+@app.delete('/usuario/{id}', tags=['Operaciónes CRUD'])
 def eliminarUsuario(id: int):   
     for usr in usuarios:
         if usr["id"] == id:
