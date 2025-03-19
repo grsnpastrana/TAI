@@ -4,6 +4,8 @@ from typing import Optional, List
 from modelsPydantic import modeloUsuario, modeloAuth
 from genToken import createToken
 from middlewares import BearerJWT
+from DB.conexion import Session, engine, Base
+from models.modelsDB import User
 
 app = FastAPI(
     title="Mi Primer API 192",
@@ -11,6 +13,7 @@ app = FastAPI(
     version="1.0.1"
 )
 
+Base.metadata.create_all(bind=engine)
 
 #BD ficticia
 usuarios = [
