@@ -46,11 +46,24 @@ def leerUsuarios():
 #Endpoint AGREGAR NUEVOS
 @app.post('/usuario', response_model= modeloUsuario, tags=['Operaciónes CRUD'])
 def agregarUsuario(usuario:modeloUsuario):
-    for usr in usuarios:
-        if usr["id"] == usuario.id:
-            raise HTTPException(status_code=400, detail="El id ya existe")
-        usuarios.append(usuario)
-        return usuario
+    db=Session()
+    try:
+        db.add(User(**usuario.model_dump()))
+        db.commit()
+        return JSONResponse(status_code=201,
+                            content={"message":"Uusuario guardado",
+                            "usuario":usuario.model_dump()})
+
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500,
+                            content={"message":"error al guardar usuario",
+                                     "Exception":str(e)})
+    finally:
+        db.close()     
+
+
+
 
 #Endopoint ACTUALIZAR USUARIO
 @app.put('/usuario/{id}',response_model= modeloUsuario, tags=['Operaciónes CRUD'])
